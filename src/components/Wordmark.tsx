@@ -15,8 +15,8 @@ export function Wordmark({ className, style }: { className?: string; style?: CSS
 			style={{ fontSize: '38.87px', gap: '0.26em', ...style }}
 		>
 			<span
-				className="scene-shadow font-extrabold leading-none tracking-[-0.05em] text-[var(--scene-heading)]"
-				style={{ fontSize: '1em', transition: 'color 3.2s cubic-bezier(0.4,0,0.2,1)' }}
+				className="wordmark-text font-extrabold leading-none tracking-[-0.05em] text-[var(--scene-heading)]"
+				style={{ fontSize: '1em' }}
 			>
 				Material Bank
 			</span>

@@ -3,10 +3,9 @@ import { Hero, type Phase } from '@/components/Hero'
 import { GlassFilters } from '@/components/glass/liquid-glass'
 import type { Scene } from '@/lib/utils'
 
-// Delay between joining the waitlist and the scene breaking into daylight.
-const SUCCESS_TO_DAY_MS = 1800
-// Copy swaps partway into the daybreak so the side text changes as light grows.
-const COPY_LAG_MS = 2400
+// Beat between joining the waitlist and the world turning to day. The scene
+// (5s cross-fade) and the side copy (quick blur-fade) both kick off here.
+const SUCCESS_TO_DAY_MS = 500
 
 export default function App() {
 	const [scene, setScene] = React.useState<Scene>('night')
@@ -23,9 +22,11 @@ export default function App() {
 	const handleSubmit = React.useCallback(() => {
 		setPhase('success')
 		clearTimers()
-		timers.current.push(setTimeout(() => setScene('day'), SUCCESS_TO_DAY_MS))
 		timers.current.push(
-			setTimeout(() => setCopyScene('day'), SUCCESS_TO_DAY_MS + COPY_LAG_MS),
+			setTimeout(() => {
+				setScene('day')
+				setCopyScene('day')
+			}, SUCCESS_TO_DAY_MS),
 		)
 	}, [])
 
@@ -39,12 +40,12 @@ export default function App() {
 		setReplayKey((k) => k + 1)
 	}
 
-	// Dev: jump scenes with the same lagged-copy behaviour as the real flow.
+	// Dev: jump scene + copy together (mirrors the real flow).
 	const toggleScene = () => {
 		clearTimers()
 		const next: Scene = scene === 'night' ? 'day' : 'night'
 		setScene(next)
-		timers.current.push(setTimeout(() => setCopyScene(next), COPY_LAG_MS))
+		setCopyScene(next)
 	}
 
 	return (

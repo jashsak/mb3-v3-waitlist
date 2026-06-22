@@ -70,13 +70,14 @@
 	--glass-border: rgba(255, 255, 255, 0.4);
 }
 
-/* transitions-dev — text states swap tokens (tuned slightly slower to match
- * the cinematic daybreak). */
+/* transitions-dev — text states swap, tuned to a pure blur-fade (no vertical
+ * slide): the line blurs + fades out, content swaps at the blurred midpoint,
+ * then blurs + fades back in — so it "blurs and changes at the same time". */
 :root {
-	--text-swap-dur: 460ms;
-	--text-swap-translate-y: 10px;
-	--text-swap-blur: 3px;
-	--text-swap-ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--text-swap-dur: 240ms;
+	--text-swap-translate-y: 0px;
+	--text-swap-blur: 6px;
+	--text-swap-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .t-text-swap {
@@ -106,6 +107,17 @@
 	.t-text-swap {
 		transition: none !important;
 	}
+}
+
+/* Wordmark scrim only at night (white text over dusk). In daylight the
+ * wordmark is dark on bright sky and needs no shadow. */
+.wordmark-text {
+	transition: color 3.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-scene='night'] .wordmark-text {
+	text-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.28),
+		0 2px 18px rgba(0, 0, 0, 0.42);
 }
 
 /* Soft scrim so light overlay text stays legible over bright areas of the photo. */

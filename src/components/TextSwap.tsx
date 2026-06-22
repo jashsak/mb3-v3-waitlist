@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
  *
  * Keep DUR in sync with --text-swap-dur in index.css.
  */
-const DUR = 460
+const DUR = 240
 
 export function TextSwap({ value, className }: { value: string; className?: string }) {
 	const ref = React.useRef<HTMLSpanElement>(null)
