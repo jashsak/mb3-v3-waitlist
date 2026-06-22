@@ -1,0 +1,169 @@
+@import 'tailwindcss';
+@import '@material-bank/mb3-components/styles.css';
+
+/* Scan the published component output so their utility classes are generated. */
+@source '../node_modules/@material-bank/mb3-components/dist';
+
+@theme {
+	--font-inter: 'Inter Variable', 'Inter', sans-serif;
+}
+
+@layer base {
+	html,
+	body,
+	#root {
+		height: 100%;
+	}
+
+	body {
+		margin: 0;
+		font-family: var(--font-inter);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+		overflow: hidden;
+	}
+}
+
+/*
+ * Scene tokens — the hero reads as a desk-by-the-window at dusk that breaks
+ * into daylight after the waitlist is joined. Driven by a single [data-scene]
+ * attribute so the whole composition cross-fades from one source of truth.
+ *
+ * Glass values come straight from the Figma "Hero": the lower third is a
+ * full-width band with backdrop-blur(16px) over a transparent → rgba(31,18,11,.5)
+ * gradient, and the InputGroup pill is a flat rgba(255,255,255,0.2) fill.
+ */
+:root {
+	/* Frosted band behind the input cluster. */
+	--glass-blur: 16px;
+	--glass-band: linear-gradient(
+		180deg,
+		rgba(24, 15, 7, 0) 0%,
+		rgba(31, 18, 11, 0.5) 47.3%,
+		rgba(31, 18, 11, 0.5) 100%
+	);
+	/* Pill surface (matches Figma InputGroup fill). */
+	--glass-bg: rgba(255, 255, 255, 0.2);
+	--glass-border: rgba(255, 255, 255, 0.22);
+	--glass-highlight: rgba(255, 255, 255, 0.5);
+	--glass-shadow: 0 1px 2px rgba(17, 24, 39, 0.1);
+
+	/* Overlay text. Night sits over dark forest/cabinet → light text. */
+	--scene-text: #e5e7eb; /* base/accent — input + chip text */
+	--scene-heading: #ffffff; /* wordmark */
+	--scene-copy: #f9fafb; /* base/primary-foreground — side + label copy */
+	--scene-label: #f9fafb;
+
+	/* Poster scale: a 1440×913 design stage scaled to cover the viewport so
+	 * the live UI overlay stays pixel-locked to the photographic background.
+	 * Computed in JS (useStageScale); 1 is just the pre-hydration default. */
+	--stage-scale: 1;
+}
+
+/* Side copy + label stay light in both scenes (they sit over the darker
+ * forest/window edges and the frosted shelf). Per the Figma day frame, only
+ * the wordmark flips to dark (gray-900 / #111827) in daylight. */
+[data-scene='day'] {
+	--scene-heading: #111827;
+	--glass-bg: rgba(255, 255, 255, 0.22);
+	--glass-border: rgba(255, 255, 255, 0.4);
+}
+
+/* transitions-dev — text states swap tokens (tuned slightly slower to match
+ * the cinematic daybreak). */
+:root {
+	--text-swap-dur: 460ms;
+	--text-swap-translate-y: 10px;
+	--text-swap-blur: 3px;
+	--text-swap-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-text-swap {
+	display: inline-block;
+	transform: translateY(0);
+	filter: blur(0);
+	opacity: 1;
+	transition:
+		transform var(--text-swap-dur) var(--text-swap-ease),
+		filter var(--text-swap-dur) var(--text-swap-ease),
+		opacity var(--text-swap-dur) var(--text-swap-ease);
+	will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+	transform: translateY(calc(var(--text-swap-translate-y) * -1));
+	filter: blur(var(--text-swap-blur));
+	opacity: 0;
+}
+.t-text-swap.is-enter-start {
+	transform: translateY(var(--text-swap-translate-y));
+	filter: blur(var(--text-swap-blur));
+	opacity: 0;
+	transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.t-text-swap {
+		transition: none !important;
+	}
+}
+
+/* Soft scrim so light overlay text stays legible over bright areas of the photo. */
+.scene-shadow {
+	text-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.28),
+		0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+/* ── Liquid glass (see components/glass/liquid-glass.tsx) ──
+ * Two stacked layers behind a host: a frost+refraction surface and a
+ * specular rim. The host owns the border-radius; layers inherit it. */
+.glass-surface {
+	border-radius: inherit;
+	background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.16) 0%,
+		rgba(255, 255, 255, 0.05) 100%
+	);
+	/* Chromium gets the SVG refraction; Safari/others gracefully get the frost. */
+	backdrop-filter: blur(7px) saturate(1.8) brightness(1.05) url(#liquidGlass);
+	-webkit-backdrop-filter: blur(7px) saturate(1.8) brightness(1.05);
+}
+
+.glass-rim {
+	border-radius: inherit;
+	/* Diagonal sheen across the surface. */
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.22) 0%,
+		rgba(255, 255, 255, 0) 28%,
+		rgba(255, 255, 255, 0) 72%,
+		rgba(255, 255, 255, 0.1) 100%
+	);
+	/* Specular bevel: bright top + bottom rim catching light, hairline edge,
+	 * and a soft drop to lift the glass off the scene. */
+	box-shadow:
+		inset 0 1px 1px rgba(255, 255, 255, 0.7),
+		inset 0 -1px 2px rgba(255, 255, 255, 0.38),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+		0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.glass-surface {
+		backdrop-filter: blur(7px) saturate(1.8) brightness(1.05);
+	}
+}
+
+/* CSS gradient stand-ins so the scene reads intentionally until the
+ * photographic backgrounds are dropped into /public/scene. */
+.scene-fallback-night {
+	background:
+		radial-gradient(120% 90% at 50% 8%, rgba(70, 84, 110, 0.55), transparent 55%),
+		linear-gradient(180deg, #2b3344 0%, #1b2230 38%, #14171f 55%, #0b0d12 100%);
+}
+.scene-fallback-day {
+	background:
+		radial-gradient(120% 90% at 50% 6%, rgba(189, 208, 224, 0.9), transparent 55%),
+		linear-gradient(180deg, #cdd8e2 0%, #b9c6cf 38%, #8a8270 56%, #5b4f3f 100%);
+}
