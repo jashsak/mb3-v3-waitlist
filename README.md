@@ -1,5 +1,7 @@
 # Material Bank V3 — Waitlist Hero
 
+**Live:** https://jashsak.github.io/mb3-v3-waitlist/
+
 A responsive launch/waitlist hero for Material Bank V3, built from the
 [Figma design](https://www.figma.com/design/DK4wOOacfNKaT1EL1IkorA/MaterialBank-Website?node-id=649-10731).
 
