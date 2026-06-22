@@ -16,32 +16,34 @@ import {
 import { ProgressiveBlur } from '@/components/glass/progressive-blur'
 
 /* ─────────────────────────────────────────────────────────────
- * ANIMATION STORYBOARD — hero load-in (dusk)
+ * ANIMATION STORYBOARD — hero load-in (dusk), an orchestrated cascade
  *
- *     0ms   background settles (scale 1.06 → 1, blur 10 → 0)
- *   320ms   "Material Bank V3" rises + de-blurs
- *   520ms   left line rises
- *   600ms   right line rises
- *   780ms   frosted band floats up
- *   840ms   glass pill rises
- *  1060ms   avatar cluster rises
- *  1200ms   "Join the waitlist" fades in
+ *     0ms   background establishes — slow 1.9s scale 1.08 → 1, blur 14 → 0
+ *   600ms   "Material Bank V3" rises (scale 0.94 → 1) + de-blurs — the hero beat
+ *  1000ms   left line rises
+ *  1200ms   right line rises
+ *  1450ms   frosted glass shelf floats up
+ *  1650ms   glass input pill rises
+ *  1950ms   avatar cluster pops in, staggered one-by-one (+chip last)
+ *  2250ms   "Join the waitlist" fades in
  *
  * On successful submit the pill cross-fades to the success state, then
- * after a delay the whole scene breaks into daylight (handled in App).
+ * after a beat the whole scene breaks into daylight (handled in App).
  * ───────────────────────────────────────────────────────────── */
 const TIMING = {
 	bg: 0,
-	wordmark: 0.32,
-	left: 0.52,
-	right: 0.6,
-	band: 0.78,
-	input: 0.84,
-	avatars: 1.06,
-	label: 1.2,
+	wordmark: 0.6,
+	left: 1.0,
+	right: 1.2,
+	band: 1.45,
+	input: 1.65,
+	avatars: 1.95,
+	label: 2.25,
 } as const
 
-// Design-system easings (mirror mb3 modal motion). customOut ≈ expo-out.
+// transitions-dev signature easing — expressive ramp with a crisp landing.
+const EASE_TD = [0.22, 1, 0.36, 1] as const
+// Design-system easing (mb3 modal motion) — used for the scene cross-fades.
 const EASE_OUT = [0.165, 0.84, 0.44, 1] as const
 // Slow, cinematic daybreak — the scene eases from night to day over 5s.
 const SCENE_DURATION = 5
@@ -92,21 +94,25 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 	const [email, setEmail] = React.useState('')
 	const copy = scenes[copyScene]
 
-	// Spring-first entrances (interface-craft): a soft, overshoot-free settle.
-	// Blur/opacity ride a short tween so they finish crisply; transform springs.
-	const rise = (delay: number) =>
-		reduce
-			? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.4, delay: delay * 0.4 } }
-			: {
-					initial: { opacity: 0, y: 16, filter: 'blur(6px)' },
-					animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-					transition: {
-						delay,
-						y: { type: 'spring', visualDuration: 0.7, bounce: 0 },
-						opacity: { duration: 0.6, ease: EASE_OUT },
-						filter: { duration: 0.7, ease: EASE_OUT },
-					},
-				}
+	// Orchestrated entrance: each element rises + de-blurs on the transitions-dev
+	// ease, offset by a clear beat (see TIMING) so the load reads as a deliberate
+	// cascade. `hero` adds a touch more travel + a subtle scale for the wordmark.
+	const rise = (delay: number, opts?: { dur?: number; y?: number; scale?: number }) => {
+		if (reduce) {
+			return {
+				initial: { opacity: 0 },
+				animate: { opacity: 1 },
+				transition: { duration: 0.4, delay: delay * 0.4 },
+			}
+		}
+		const y = opts?.y ?? 22
+		const scale = opts?.scale
+		return {
+			initial: { opacity: 0, y, filter: 'blur(8px)', ...(scale ? { scale } : {}) },
+			animate: { opacity: 1, y: 0, filter: 'blur(0px)', ...(scale ? { scale: 1 } : {}) },
+			transition: { duration: opts?.dur ?? 0.85, delay, ease: EASE_TD },
+		}
+	}
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault()
@@ -208,9 +214,9 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 						aria-hidden
 						className="absolute left-0 w-[1440px]"
 						style={{ top: 598, height: 315 }}
-						initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+						initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 1, delay: TIMING.band, ease: EASE_OUT }}
+						transition={{ duration: 0.95, delay: TIMING.band, ease: EASE_TD }}
 					>
 						<ProgressiveBlur />
 						<div className="absolute inset-0" style={{ background: 'var(--glass-band)' }} />
@@ -219,7 +225,7 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 					<motion.div
 						className="absolute left-1/2 -translate-x-1/2"
 						style={{ top: 125 }}
-						{...rise(TIMING.wordmark)}
+						{...rise(TIMING.wordmark, { y: 30, scale: 0.94, dur: 1 })}
 					>
 						<Wordmark />
 					</motion.div>
@@ -249,13 +255,9 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 						{waitlistForm}
 					</motion.form>
 
-					<motion.div
-						className="absolute left-1/2 -translate-x-1/2"
-						style={{ top: 764 }}
-						{...rise(TIMING.avatars)}
-					>
-						<WaitlistAvatars />
-					</motion.div>
+					<div className="absolute left-1/2 -translate-x-1/2" style={{ top: 764 }}>
+						<WaitlistAvatars delay={TIMING.avatars} />
+					</div>
 
 					<motion.p
 						className="scene-shadow absolute left-1/2 -translate-x-1/2 text-center text-[16px] leading-6 tracking-[-0.32px] text-[var(--scene-label)]"
@@ -273,16 +275,16 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 					<motion.div
 						aria-hidden
 						className="absolute inset-x-0 bottom-0 h-[48%]"
-						initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+						initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 1, delay: TIMING.band, ease: EASE_OUT }}
+						transition={{ duration: 0.95, delay: TIMING.band, ease: EASE_TD }}
 					>
 						<ProgressiveBlur />
 						<div className="absolute inset-0" style={{ background: 'var(--glass-band)' }} />
 					</motion.div>
 
 					<div className="relative flex h-full flex-col items-center px-5">
-						<motion.div className="pt-[7vh]" {...rise(TIMING.wordmark)}>
+						<motion.div className="pt-[7vh]" {...rise(TIMING.wordmark, { y: 30, scale: 0.94, dur: 1 })}>
 							{/* Bigger, viewport-responsive lockup on mobile. */}
 							<Wordmark style={{ fontSize: 'clamp(2.25rem, 10.5vw, 3rem)' }} />
 						</motion.div>
@@ -307,9 +309,7 @@ export function Hero({ scene, copyScene, phase, onSubmit }: HeroProps) {
 								{waitlistForm}
 							</motion.form>
 
-							<motion.div {...rise(TIMING.avatars)}>
-								<WaitlistAvatars />
-							</motion.div>
+							<WaitlistAvatars delay={TIMING.avatars} />
 
 							<motion.p
 								className="scene-shadow text-center text-[16px] leading-6 tracking-[-0.32px] text-[var(--scene-label)]"
@@ -330,9 +330,9 @@ function SceneBackground({ scene, reduce }: { scene: Scene; reduce: boolean }) {
 	return (
 		<motion.div
 			className="absolute inset-0"
-			initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.06, filter: 'blur(10px)' }}
+			initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.08, filter: 'blur(14px)' }}
 			animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
-			transition={{ duration: 1.5, ease: EASE_OUT, delay: TIMING.bg }}
+			transition={{ duration: 1.9, ease: EASE_TD, delay: TIMING.bg }}
 		>
 			<div className="scene-fallback-night absolute inset-0" />
 			<div
